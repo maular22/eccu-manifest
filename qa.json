@@ -1,1 +1,40 @@
-{"_note": "Marcador: todavía no hay manifiesto de QA publicado. Miguel reemplaza este archivo por el manifiesto firmado (tools/manifest de eccu-api). La Action trata este marcador como 'sin publicar' y pasa."}
+{
+  "signed": {
+    "type": "eccu-endpoints",
+    "spec": 1,
+    "version": 1,
+    "issuedAt": "2026-11-04T16:25:00Z",
+    "expiresAt": "2026-12-04T16:25:00Z",
+    "environment": "qa",
+    "epoch": 1,
+    "active": {
+      "site": "railway-qa",
+      "baseUrls": [
+        "https://eccu-api-production.up.railway.app"
+      ]
+    },
+    "standby": {
+      "site": "sin-espejo"
+    },
+    "manifestSources": [
+      "https://raw.githubusercontent.com/maular22/eccu-manifest/main/qa.json",
+      "https://eccu-manifest.maular22.workers.dev/qa.json"
+    ],
+    "minAppVersion": {
+      "ios": "0.0.0",
+      "android": "0.0.0"
+    }
+  },
+  "signatures": [
+    {
+      "keyId": "qa-2026-c",
+      "alg": "Ed25519",
+      "sig": "W0ZG_Si5eoKEi3XPYeKHKOm0twsgp__fsQyUXYDUGkFgEIwIrdSNj7O45BU-CsHRe3LK4y1HJG_GMmVp-uAmCw"
+    },
+    {
+      "keyId": "qa-2026-d",
+      "alg": "Ed25519",
+      "sig": "_kR8TLZi6KiIAZHFmqdK8MoWDbAlxM_y-63Z47rk8nPbpYTaYRt0RC12swPKL923HqIzI__llT049EV3HW_PDg"
+    }
+  ]
+}
