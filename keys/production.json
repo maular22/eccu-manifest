@@ -1,0 +1,1 @@
+{"_note": "Marcador: aquí van las llaves PÚBLICAS de producción, como lista [{\"keyId\": \"...\", \"publicKey\": \"<SPKI DER en base64url>\"}]. Nunca llaves privadas. Mientras production.json sea un marcador, este archivo no se usa.", "keys": []}

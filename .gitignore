@@ -1,0 +1,6 @@
+*.pem
+*.key
+*.p8
+*.p12
+.env*
+node_modules/

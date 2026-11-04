@@ -1,0 +1,72 @@
+name: verificar-manifiesto
+
+# Solo VERIFICA. Esta Action nunca firma ni escribe en el repo.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * *' # diaria: avisa si el manifiesto está por vencer
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [production, qa]
+    steps:
+      # SHAs copiados de los workflows de eccu-api (v4.4.0 de ambas).
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 2 # mínimo; la base de comparación se trae aparte con git fetch
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - name: Verificar ${{ matrix.environment }}
+        env:
+          ENVIRONMENT: ${{ matrix.environment }}
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          ARGS=(--environment "$ENVIRONMENT")
+          # Por defecto corre el verificador de ESTE checkout (push, schedule).
+          VERIFIER=scripts/verify-manifest.mjs
+          case "$EVENT_NAME" in
+            pull_request)
+              # Base de confianza: la rama destino, no el commit anterior del PR.
+              git fetch --no-tags --depth=1 origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+              ARGS+=(--previous-ref "origin/${BASE_REF}" --reject-expired)
+              # El verificador sale de la rama BASE, no del PR: un PR no puede
+              # reescribir su propia guardia. Las llaves también se leen de la
+              # base (--previous-ref compara keys/ con las de la base y sale 3).
+              VERIFIER="${RUNNER_TEMP}/verify-manifest.base.mjs"
+              if ! git show "origin/${BASE_REF}:scripts/verify-manifest.mjs" > "$VERIFIER"; then
+                echo "No encontré scripts/verify-manifest.mjs en la rama base (${BASE_REF}): no se puede verificar este PR." >&2
+                exit 1
+              fi
+              if ! git diff --quiet "origin/${BASE_REF}" HEAD -- scripts .github; then
+                echo "::warning::Este PR cambia scripts/ o .github/: revisión manual obligatoria (la verificación usó el script de la base)."
+              fi
+              ;;
+            push)
+              if [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+                ARGS+=(--previous none --reject-expired) # rama nueva: primer manifiesto
+              else
+                git fetch --no-tags --depth=1 origin "$BEFORE_SHA"
+                ARGS+=(--previous-ref "$BEFORE_SHA" --reject-expired)
+              fi
+              ;;
+            *)
+              # schedule / workflow_dispatch: sin comparación; falla si quedan < 7 días
+              ARGS+=(--mode daily --min-days-left 7)
+              ;;
+          esac
+          node "$VERIFIER" "${ARGS[@]}"
